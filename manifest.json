@@ -1,0 +1,28 @@
+{
+  "name": "Gileno - Gestão Saúde",
+  "short_name": "Gestão Saúde",
+  "description": "App pessoal de gestão de saúde — refeições, hidratação, sinais vitais, treino e medicamentos.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1214",
+  "theme_color": "#059669",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["health", "lifestyle", "medical"],
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
