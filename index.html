@@ -626,7 +626,7 @@ db.enablePersistence({ synchronizeTabs: false }).catch(err => {
 });
 
 // ========== VERSÃO ==========
-const APP_VERSION = '1.37.0';
+const APP_VERSION = '1.37.1';
 
 // ========== GLOBALS ==========
 let U = null; // user
@@ -10305,13 +10305,13 @@ function pdfPainelMensal(d, ym, opts) {
     pdfTabelaDiasDoMes(d, ym, dias, r, { destaqueId: opts.destaqueId, rotulo, p });
     return true;
 }
-// v1.36.0: calendário do mês (7 colunas, seg a dom): roxo = aula com o personal (avulsa marcada), cinza = treino sem o personal,
+// v1.36.0: calendário do mês (7 colunas; v1.37.1: de DOMINGO a sábado, pedido do CEO): roxo = aula com o personal (avulsa marcada), cinza = treino sem o personal,
 // claro = descanso, borda verde = hoje, cinza-claro = a vir, branco = dia passado sem treino. Célula: dia, marca, nome curto, volume.
 function pdfCalendarioMes(d, y, ym, dias, destaqueId) {
     const { W, M, CW } = d;
-    const n = diasNoMes(ym), off = (getDayOfWeek(ym + '-01') + 6) % 7, linhas = Math.ceil((off + n) / 7);
+    const n = diasNoMes(ym), off = getDayOfWeek(ym + '-01'), linhas = Math.ceil((off + n) / 7); // v1.37.1: domingo na 1ª coluna
     const gap = 3, cw = (CW - gap * 6) / 7, ch = linhas > 5 ? 28 : 33;
-    ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].forEach((s, i) => { const x = M + i * (cw + gap); d.txt(x + cw / 2 - pdfW(s, 7) / 2, y - 7, s, 7, true, PDF_CINZA); });
+    ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].forEach((s, i) => { const x = M + i * (cw + gap); d.txt(x + cw / 2 - pdfW(s, 7) / 2, y - 7, s, 7, true, PDF_CINZA); });
     y -= 11;
     const porDia = {};
     dias.forEach(a => { (porDia[a.dia] = porDia[a.dia] || []).push(a); });
@@ -10423,7 +10423,8 @@ function pdfPagamentosPersonal(d, ym, opts) {
     const gap = 8, kw = (CW - gap * 3) / 4, KH = 50;
     pdfKpi(d, M, y, kw, KH, r.aulas + ' de ' + r.disponiveis, 'Aulas dadas' + (emCurso ? ' até aqui' : ' no mês'), r.aulasApp + ' pelo app' + (r.avulsas ? ' + ' + r.avulsas + ' avulsa(s)' : ''), PDF_ROXO_TXT, ROXO_CL, ROXO_B);
     pdfKpi(d, M + (kw + gap), y, kw, KH, fmtBRL(r.mensalidade), 'Mensalidade (dia 1)', '= ' + p.aulasMes + ' aulas incluídas' + (r.mensalidadePaga ? ' · paga' : ''));
-    pdfKpi(d, M + 2 * (kw + gap), y, kw, KH, fmtBRL(r.valorExtras), 'Aulas extras', r.extras + ' × ' + fmtBRL(p.valorExtra) + (r.extras && r.extrasPagos ? ' · pagas' : ''));
+    const extrasAPagar = r.extras > 0 && !r.extrasPagos; // v1.37.1 (CEO): extras a pagar em vermelho
+    pdfKpi(d, M + 2 * (kw + gap), y, kw, KH, fmtBRL(r.valorExtras), 'Aulas extras', r.extras + ' × ' + fmtBRL(p.valorExtra) + (r.extras && r.extrasPagos ? ' · pagas' : ''), extrasAPagar ? PDF_VERM : null);
     pdfKpi(d, M + 3 * (kw + gap), y, kw, KH, fmtBRL(custo), 'Custo do mês', porAula != null ? fmtBRL(porAula) + ' por aula dada' : 'sem aula dada', VERDE_TXT, VERDE_CL, VERDE_B);
     y -= KH + 12;
     // pagamentos com selo
@@ -10438,8 +10439,8 @@ function pdfPagamentosPersonal(d, ym, opts) {
         y -= 30;
     };
     linhaPag('Mensalidade de ' + ymLabel(ym).toLowerCase(), 'vence no dia 1 · cobre ' + p.aulasMes + ' aulas', fmtBRL(r.mensalidade), null, r.mensalidadePaga ? 'PAGA' : 'A PAGAR', !!r.mensalidadePaga);
-    linhaPag('Aulas extras de ' + ymLabel(ym).toLowerCase(), 'acima das ' + p.aulasMes + ': ' + fmtBRL(p.valorExtra) + ' cada', fmtBRL(r.valorExtras), null, r.extras === 0 ? 'NADA A PAGAR' : r.extrasPagos ? 'PAGAS' : 'A PAGAR', r.extras === 0 || !!r.extrasPagos);
-    linhaPag('Valor a acertar no fim do mês', 'aulas extras não pagas', fmtBRL(r.extrasPagos ? 0 : r.valorExtras), VERDE_TXT, (r.extras === 0 || r.extrasPagos) ? 'EM DIA' : 'A ACERTAR', r.extras === 0 || !!r.extrasPagos);
+    linhaPag('Aulas extras de ' + ymLabel(ym).toLowerCase(), 'acima das ' + p.aulasMes + ': ' + fmtBRL(p.valorExtra) + ' cada', fmtBRL(r.valorExtras), extrasAPagar ? PDF_VERM : null, r.extras === 0 ? 'NADA A PAGAR' : r.extrasPagos ? 'PAGAS' : 'A PAGAR', r.extras === 0 || !!r.extrasPagos);
+    linhaPag('Valor a acertar no fim do mês', 'aulas extras não pagas', fmtBRL(r.extrasPagos ? 0 : r.valorExtras), extrasAPagar ? PDF_VERM : VERDE_TXT, (r.extras === 0 || r.extrasPagos) ? 'EM DIA' : 'A ACERTAR', r.extras === 0 || !!r.extrasPagos); // v1.37.1: vermelho enquanto houver extra a pagar
     y -= 2;
     // uso das aulas: barra + fita dos dias
     titulo('Uso das ' + r.disponiveis + ' aulas');
