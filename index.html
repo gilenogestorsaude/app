@@ -626,7 +626,7 @@ db.enablePersistence({ synchronizeTabs: false }).catch(err => {
 });
 
 // ========== VERSÃO ==========
-const APP_VERSION = '1.36.2';
+const APP_VERSION = '1.37.0';
 
 // ========== GLOBALS ==========
 let U = null; // user
@@ -8497,7 +8497,7 @@ function rTreino() {
                     <span style="font-size:20px">🏆</span>
                     <div style="flex:1;min-width:0">
                         <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.5px">ÚLTIMO TREINO REGISTRADO</div>
-                        <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last.nome} <span style="font-weight:500;color:var(--text3);font-size:12px">• ${dStr}</span></div>
+                        <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(last.nome)} <span style="font-weight:500;color:var(--text3);font-size:12px">• ${dStr}</span></div>
                     </div>
                     <span style="font-size:13px;color:var(--text3);white-space:nowrap">📁 histórico ›</span>
                 </div>
@@ -8524,7 +8524,7 @@ function rTreino() {
                     <div style="width:48px;height:48px;border-radius:12px;background:${letterColor}22;color:${letterColor};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;flex-shrink:0">${letter}</div>
                     <div style="flex:1;min-width:0">
                         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
-                            <span style="font-size:14px;font-weight:700;color:var(--text)">${tpl.nome || ('Treino ' + letter)}</span>
+                            <span style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(tpl.nome || ('Treino ' + letter))}</span>
                             ${persoBadge}
                         </div>
                         <div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${gruposLabel}</div>
@@ -8617,7 +8617,7 @@ function rTemplateEditor() {
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
                     ${renderExerciseThumb(ex, 44)}
                     <div style="flex:1;min-width:0">
-                        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ex.nome || 'Exercício'}</div>
+                        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(ex.nome || 'Exercício')}</div>
                         <div style="font-size:10px;color:${grupo.color};font-weight:600">${grupo.label}</div>
                     </div>
                     <button onclick="removeExerciseFromTemplate(${exIdx})" style="width:28px;height:28px;border-radius:6px;background:var(--red-bg);border:none;color:var(--red);cursor:pointer;font-size:13px;flex-shrink:0" title="Remover">🗑</button>
@@ -8675,7 +8675,7 @@ function rTemplateEditor() {
         <div class="card mb-12">
             <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">Nome do treino</label>
-                <input type="text" class="form-input" value="${editingTemplate.nome}" placeholder="Ex: Treino A — Costas/Bíceps"
+                <input type="text" class="form-input" value="${escHtml(editingTemplate.nome)}" placeholder="Ex: Treino A — Costas/Bíceps"
                        oninput="editingTemplate.nome = this.value">
             </div>
         </div>
@@ -9184,7 +9184,7 @@ function rTreinoExecute() {
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
                     ${renderExerciseThumb(ex, 56)}
                     <div style="flex:1;min-width:0">
-                        <div style="font-size:14px;font-weight:700;color:var(--text);${ex.feito ? 'text-decoration:line-through' : ''}">${ex.nome}</div>
+                        <div style="font-size:14px;font-weight:700;color:var(--text);${ex.feito ? 'text-decoration:line-through' : ''}">${escHtml(ex.nome)}</div>
                         <div style="font-size:11px;color:${grupo.color};font-weight:600">${grupo.label}${ex.metodo ? ' • ' + ex.metodo : ''}</div>
                         ${ex.notas ? `<div style="font-size:10.5px;color:var(--text3);line-height:1.35;margin-top:2px">${escHtml(ex.notas)}</div>` : ''}
                         ${ex.cargaRef != null ? `<div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:2px">📈 última vez: ${fmtCarga(ex.cargaRef)} kg</div>` : ''}
@@ -9500,6 +9500,7 @@ function openExecExercisePicker(exIdx) {
             ${replacing ? `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">No lugar de <strong>${escHtml(replacing.nome)}</strong> (só nesta sessão: o template não muda):</div>` : '<div style="font-size:12px;color:var(--text2);margin-bottom:4px">Entra só nesta sessão (o template não muda):</div>'}
             ${replacing ? '' : cardioPickerHtml()}
             ${groupsHtml || '<div style="font-size:12px;color:var(--text3)">Nenhum template com exercícios.</div>'}
+            ${replacing && replacing.tipo === 'cardio' ? '' : `<button class="btn btn-outline w-full" style="margin-top:10px" onclick="pickCustomExecExercise(${exIdx == null ? 'null' : exIdx})">${replacing ? '✏️ Corrigir o nome: digitar o nome certo' : '+ Exercício personalizado: digitar o nome'}</button>`}
             ${replacing ? `<button class="btn btn-outline w-full" style="color:var(--red);margin-top:10px" onclick="removeExecExercise(${exIdx})">🗑 Remover este exercício da sessão</button>` : ''}
         </div>`;
     document.body.appendChild(overlay);
@@ -9523,6 +9524,59 @@ function applyExecExercise(exIdx, tplId, i) {
     rTreinoExecute();
     toast(exIdx != null ? '⇄ Exercício trocado nesta sessão' : '➕ Exercício adicionado à sessão');
 }
+// ===== v1.37.0 (CEO 30/09/2026, "A1"): exercício personalizado na sessão =====
+// O professor vê no treino que o nome está errado: no ⇄, o usuário digita o nome certo e a sessão segue com as MESMAS séries, cargas e
+// marcações; no ➕, entra um exercício novo na sessão. Nos dois, o app pergunta se muda também na ficha deste treino. Nenhum treino já
+// registrado é tocado (o histórico fica com o nome daquele dia); a 📈 última vez e o recorde do nome novo são os do que já existir com
+// esse nome, como sempre. A sessão e a ficha gravam pelo caminho de sempre (persistExecution -> save).
+function exNomeChave(nome) { return String(nome == null ? '' : nome).trim().toLowerCase(); }
+function pickCustomExecExercise(exIdx) {
+    if (!activeExecution) return;
+    const replacing = (exIdx != null) ? activeExecution.exercicios[exIdx] : null;
+    if (exIdx != null && (!replacing || replacing.tipo === 'cardio')) return;
+    const digitado = prompt(replacing ? `Nome certo do exercício (no lugar de "${replacing.nome}"):` : 'Nome do exercício:', replacing ? String(replacing.nome == null ? '' : replacing.nome) : '');
+    if (digitado == null) return; // cancelou: nada muda, o ⇄/➕ continua aberto
+    const nome = String(digitado).trim();
+    if (!nome) { toast('Todo exercício precisa de um nome', true); return; }
+    let grupo;
+    if (replacing) grupo = replacing.grupo || 'outro';
+    else { const g = prompt('Grupo muscular (peito, costas, ombros, bicep, tricep, pernas, gluteo, abdomen, aerob):', 'outro'); grupo = String(g == null || !String(g).trim() ? 'outro' : g).toLowerCase().trim(); }
+    const fecha = () => document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+    const tpl = (D.workoutTemplates || []).find(t => t && t.id === activeExecution.templateId);
+    let naFicha = 0;
+    if (replacing) {
+        const de = String(replacing.nome == null ? '' : replacing.nome);
+        if (nome === de.trim()) { fecha(); return; } // nada mudou
+        replacing.nome = nome; replacing.grupo = grupo; replacing.exerciseId = null; // as séries, cargas e marcações ficam como estão
+        replacing.cargaRef = lastCargaFor(nome); // 📈 última vez do nome novo (ou nada)
+        const rc = activeExecution.restCtx; // cronômetro do descanso: nome do exercício e o "a seguir"
+        if (rc) {
+            if (rc.exIdx === exIdx) rc.nome = nome;
+            if (typeof rc.proxima === 'string' && rc.proxima.indexOf('próximo exercício, ') === 0) { // "a seguir" recalculado pela posição (como o armRest), não pelo nome
+                const px = activeExecution.exercicios.slice((rc.exIdx || 0) + 1).find(e => e && Array.isArray(e.sets) && e.sets.some(s => !s.done));
+                if (px) rc.proxima = 'próximo exercício, ' + (px.nome || '');
+            }
+        }
+        if (tpl && Array.isArray(tpl.exercicios)) {
+            const alvo = tpl.exercicios.filter(e => e && e.tipo !== 'cardio' && exNomeChave(e.nome) === exNomeChave(de));
+            if (alvo.length && confirm(`Trocar também na ficha "${tpl.nome}"?
+
+"${de.trim()}" passa a se chamar "${nome}" nessa ficha. Os treinos já registrados não mudam.`)) {
+                alvo.forEach(e => { e.nome = nome; e.exerciseId = null; }); naFicha = alvo.length; // só o nome: cada linha fica com o próprio grupo
+            }
+        }
+    } else {
+        const novo = { id: uid(), exerciseId: null, nome: nome, grupo: grupo, series: 3, reps: '8-12', carga: '', metodo: '' };
+        activeExecution.exercicios.push(seedExecExercise(novo));
+        if (tpl && Array.isArray(tpl.exercicios) && confirm(`Adicionar "${nome}" também na ficha "${tpl.nome}"?`)) { tpl.exercicios.push(Object.assign({}, novo, { id: uid() })); naFicha = 1; }
+    }
+    fecha();
+    persistExecution(); // a sessão e, se mudou, a ficha, no mesmo save
+    rTreinoExecute();
+    if (restPopupAberto) renderRestPopup();
+    toast(replacing ? '✏️ Nome corrigido nesta sessão' + (naFicha ? ' e na ficha' : '') : '➕ Exercício adicionado à sessão' + (naFicha ? ' e à ficha' : ''));
+}
+
 function removeExecExercise(exIdx) {
     if (!activeExecution) return;
     const ex = activeExecution.exercicios[exIdx];
@@ -9654,7 +9708,7 @@ function execBannerHtml() {
                 <span style="font-size:22px">⏱</span>
                 <div style="flex:1;min-width:0">
                     <div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--primary)">TREINO EM ANDAMENTO</div>
-                    <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${activeExecution.nome}</div>
+                    <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(activeExecution.nome)}</div>
                     <div style="font-size:11px;color:var(--text2)">começou há ${min} min · ${feitas}/${total} séries feitas</div>
                 </div>
             </div>
@@ -9696,7 +9750,7 @@ function rTreinoSession() {
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:${(ex.series || []).length ? '8px' : '0'}">
                 ${renderExerciseThumb(ex, 44)}
                 <div style="flex:1;min-width:0">
-                    <div style="font-size:14px;font-weight:700;color:var(--text)">${ex.nome || '—'}</div>
+                    <div style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(ex.nome || '—')}</div>
                     <div style="font-size:11px;color:var(--text3)">${(ex.series || []).length} série${(ex.series || []).length === 1 ? '' : 's'}</div>
                 </div>
             </div>
@@ -11055,7 +11109,7 @@ function rTreinoHistory() {
                     </div>
                 </div>
                 <div style="font-size:12px;color:var(--text2)">
-                    Última: <strong style="color:var(--text)">${last.nome}</strong> ${dStr} • ${stat.exercicios} exercícios • ${stat.series} séries • ${fmtN(stat.volume)}kg vol
+                    Última: <strong style="color:var(--text)">${escHtml(last.nome)}</strong> ${dStr} • ${stat.exercicios} exercícios • ${stat.series} séries • ${fmtN(stat.volume)}kg vol
                 </div>
             </div>`;
     }
@@ -11075,13 +11129,13 @@ function rTreinoHistory() {
             <div class="card mb-8" onclick="openTreinoSession('${t.id}')" style="cursor:pointer${pr ? ';border-left:3px solid #f59e0b' : ''}">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
                     <div style="flex:1;min-width:0">
-                        <div style="font-size:14px;font-weight:700;color:var(--text)">${t.nome}</div>
+                        <div style="font-size:14px;font-weight:700;color:var(--text)">${escHtml(t.nome)}</div>
                         <div style="font-size:11px;color:var(--text3)">${formatDataTreino(t.data)}${t.duracao ? ' • ' + t.duracao + ' min' : ''}</div>
                     </div>
                     <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();duplicateTreino('${t.id}')" title="Duplicar pra hoje">📋</button>
                 </div>
                 ${(chipsHtml || prChip || persoChip || watchChip) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${chipsHtml}${prChip}${persoChip}${watchChip}</div>` : ''}
-                <div style="font-size:11px;color:var(--text2);margin-bottom:4px">${exNomes || '—'}</div>
+                <div style="font-size:11px;color:var(--text2);margin-bottom:4px">${escHtml(exNomes || '—')}</div>
                 <div style="font-size:11px;color:var(--text3)">
                     ${stat.exercicios} ex • ${stat.series} séries • ${fmtN(stat.volume)}kg volume
                 </div>
@@ -11159,7 +11213,7 @@ function rTreinoEditor() {
         exHtml += `
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">
                 <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-                    <input type="text" value="${ex.nome || ''}" placeholder="Nome do exercício (ex: Supino reto)"
+                    <input type="text" value="${escHtml(ex.nome || '')}" placeholder="Nome do exercício (ex: Supino reto)"
                            oninput="editingTreino.exercicios[${exIdx}].nome = this.value"
                            style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-weight:600">
                     <button onclick="removeExercise(${exIdx})" style="width:28px;height:28px;border-radius:6px;background:var(--red-bg);border:none;color:var(--red);cursor:pointer;font-size:13px;flex-shrink:0" title="Remover exercício">🗑</button>
@@ -11185,7 +11239,7 @@ function rTreinoEditor() {
             </div>
             <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">Nome da sessão</label>
-                <input type="text" id="treino-nome" class="form-input" value="${editingTreino.nome}" placeholder="Ex: Peito/Tríceps, Pernas, Treino A"
+                <input type="text" id="treino-nome" class="form-input" value="${escHtml(editingTreino.nome)}" placeholder="Ex: Peito/Tríceps, Pernas, Treino A"
                        oninput="editingTreino.nome = this.value">
             </div>
             ${personalAtivo() ? `
