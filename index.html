@@ -150,7 +150,7 @@ select.form-input{-webkit-appearance:none;appearance:none;background-image:url("
 .pring-div{height:1px;background:var(--border);margin:14px 4px 12px}
 
 /* ========== BOTTOM NAV ========== */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 max(12px,env(safe-area-inset-bottom));z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,0.15)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 max(12px,env(safe-area-inset-bottom));z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,0.15);transform:translateY(var(--vp-desvio,0px))}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 14px;border-radius:14px;background:none;border:none;cursor:pointer;color:var(--text3);transition:all .2s}
 .nav-item.active{color:#04231a;background:var(--primary)}
 .nav-item svg{width:24px;height:24px}
@@ -626,7 +626,7 @@ db.enablePersistence({ synchronizeTabs: false }).catch(err => {
 });
 
 // ========== VERSÃO ==========
-const APP_VERSION = '1.37.1';
+const APP_VERSION = '1.37.2';
 
 // ========== GLOBALS ==========
 let U = null; // user
@@ -9204,7 +9204,7 @@ function rTreinoExecute() {
     const restSec = restRemainingSec(); // v1.35.0: pela hora do relógio
     const resting = restSec != null && restSec > 0;
     const restBar = `
-        <div id="rest-bar" style="display:${resting ? 'flex' : 'none'};position:fixed;left:0;right:0;bottom:0;z-index:101;align-items:center;gap:8px;background:var(--primary);color:#0a0f0a;padding:8px 12px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -2px 10px rgba(0,0,0,.25)">
+        <div id="rest-bar" style="display:${resting ? 'flex' : 'none'};position:fixed;left:0;right:0;bottom:0;z-index:101;align-items:center;gap:8px;background:var(--primary);color:#0a0f0a;padding:8px 12px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -2px 10px rgba(0,0,0,.25);transform:translateY(var(--vp-desvio,0px))">
             <span style="font-size:13px;font-weight:800">⏱ Descanso</span>
             <button onclick="adjustRest(-15)" style="height:32px;padding:0 9px;border-radius:8px;background:rgba(0,0,0,.18);border:none;color:#0a0f0a;font-size:12px;font-weight:800;cursor:pointer">−15s</button>
             <span id="rest-countdown" onclick="openRestPopup()" title="Abrir o cronômetro" style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;min-width:58px;text-align:center;cursor:pointer">${fmtMMSS(restSec || 0)}</span>
@@ -9236,8 +9236,78 @@ function restBarEncaixa() {
     } catch (e) { h = 0; }
     b.style.bottom = h + 'px';
     b.style.paddingBottom = h > 0 ? '8px' : 'calc(8px + env(safe-area-inset-bottom))';
+    if (typeof vpAjusta === 'function') vpAjusta(); // v1.37.2
 }
 window.addEventListener('resize', () => { if (cPage === 'treino-execute') restBarEncaixa(); }); // girar o aparelho muda a navegação
+
+// v1.37.2 (defeito do CEO 17/10/2026, print de 13/10): no app instalado do iPhone, depois que o teclado fecha (ao digitar a
+// carga), o WebKit às vezes não devolve a altura da tela e TUDO o que é fixo embaixo (navegação e barra do descanso) fica alto,
+// no meio da lista, na altura do teclado (defeito conhecido do iOS 26/27). Cura: medir a área VISÍVEL (visualViewport) contra
+// a janela e descer a navegação e a barra pelo desvio, só com o teclado fechado e sem zoom de pinça. Sem desvio (Chrome,
+// Android, iPhone sem o defeito) o desvio é 0 e nada muda. Quando corrige, deixa uma linha em Ajustes › Sincronização.
+const VP = { desvio: 0, avisadoEm: 0, avisadoSemEm: 0, pend: null };
+function vpEditando() {
+    const a = document.activeElement;
+    if (!a || a === document.body || a === document.documentElement) return false;
+    const tag = String(a.tagName || '').toUpperCase();
+    if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (tag === 'INPUT') return !/^(button|checkbox|radio|submit|reset|range|color|file|image|hidden)$/i.test(a.type || 'text');
+    return a.isContentEditable === true;
+}
+function vpCalcDesvio() {
+    const vv = window.visualViewport;
+    if (!vv || vpEditando()) return 0;                      // teclado aberto: quem posiciona é o iPhone
+    if (typeof isStandalone === 'function' && !isStandalone()) return 0; // só no app instalado (onde o defeito foi visto)
+    if (Math.abs((Number(vv.scale) || 1) - 1) > 0.01) return 0; // zoom de pinça: não mexer
+    const janela = Number(window.innerHeight) || 0;
+    const d = (Number(vv.offsetTop) || 0) + (Number(vv.height) || 0) - janela;
+    const teto = Math.max(janela, (window.screen && Number(screen.height)) || 0) * 0.6;
+    return (d >= 120 && d <= teto) ? d : 0;                 // r2: só desvio de teclado (o print mostra 334); desvio pequeno é ambíguo
+}
+// Diagnóstico (r2, pedido da auditoria): com o teclado fechado, se a área visível não bate com a janela OU a base da navegação não
+// bate com a janela, grava os números brutos, corrigindo ou não. É o que diz, no iPhone, qual variante do defeito aconteceu.
+// r3: o iPhone solta o foco ANTES de o teclado terminar de descer; por isso a linha só sai quando a MESMA medida se repete em
+// amostras com 400 ms ou mais entre elas (o teclado descendo muda a medida a cada amostra), e cada tipo de linha tem a sua espera
+// de 10 min ("sem correção" nunca bloqueia "navegação descida"); o registro guarda 30.
+function vpRegistra(d) {
+    const vv = window.visualViewport;
+    if (!vv || vpEditando()) { VP.pend = null; return; }
+    if (typeof isStandalone === 'function' && !isStandalone()) { VP.pend = null; return; }
+    if (Math.abs((Number(vv.scale) || 1) - 1) > 0.01) { VP.pend = null; return; }
+    const janela = Number(window.innerHeight) || 0, fim = (Number(vv.offsetTop) || 0) + (Number(vv.height) || 0);
+    let base = null;
+    const nav = $('bottom-nav');
+    try { if (nav && !(nav.classList && nav.classList.contains('hidden'))) base = nav.getBoundingClientRect().bottom; } catch (e) { base = null; }
+    if (!(Math.abs(fim - janela) > 1 || (base != null && Math.abs(base - janela) > 1))) { VP.pend = null; return; }
+    const assin = [Math.round(janela), Math.round(Number(vv.height) || 0), Math.round(Number(vv.offsetTop) || 0), base == null ? 'x' : Math.round(base), d > 0 ? 1 : 0].join('|');
+    const agora = Date.now();
+    if (!VP.pend || VP.pend.assin !== assin) { VP.pend = { assin, t: agora }; return; }
+    if (agora - VP.pend.t < 400) return;                           // ainda pode ser o teclado descendo
+    const chave = d > 0 ? 'avisadoEm' : 'avisadoSemEm';
+    if (agora - VP[chave] <= 10 * 60 * 1000) return;
+    VP[chave] = agora;
+    try { syncLog('tela', (d > 0 ? 'teclado deixou a tela ' + Math.round(d) + ' px alta; navegação descida' : 'tela fora do lugar; sem correção')
+        + ' (janela ' + Math.round(janela) + ', visível ' + Math.round(Number(vv.height) || 0) + ' a partir de ' + Math.round(Number(vv.offsetTop) || 0)
+        + ', tela ' + Math.round((window.screen && Number(screen.height)) || 0) + ', base da navegação ' + (base == null ? 'oculta' : Math.round(base)) + ')'); } catch (e) { /* diagnóstico só */ }
+}
+function vpAjusta() {
+    let d = 0;
+    try { d = vpCalcDesvio(); } catch (e) { d = 0; }
+    if (Math.abs(d - VP.desvio) >= 0.5) {
+        VP.desvio = d;
+        try { document.documentElement.style.setProperty('--vp-desvio', d + 'px'); } catch (e) { /* sem estilo: nada a fazer */ }
+    }
+    try { vpRegistra(d); } catch (e) { /* diagnóstico só */ }
+}
+function vpAgenda() { vpAjusta(); setTimeout(vpAjusta, 120); setTimeout(vpAjusta, 450); setTimeout(vpAjusta, 1000); } // o iPhone assenta a tela aos poucos
+if (window.visualViewport && typeof window.visualViewport.addEventListener === 'function') {
+    window.visualViewport.addEventListener('resize', vpAjusta);
+    window.visualViewport.addEventListener('scroll', vpAjusta);
+}
+window.addEventListener('resize', vpAjusta);
+window.addEventListener('scroll', vpAjusta, { passive: true });
+document.addEventListener('focusin', vpAjusta);
+document.addEventListener('focusout', vpAgenda);
 
 // Marca/desmarca UMA série: ao concluir, registra a carga daquela série, dispara o descanso
 // e a próxima série vira a "ativa" (passo a passo).
